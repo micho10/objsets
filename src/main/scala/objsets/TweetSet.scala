@@ -46,7 +46,7 @@ abstract class TweetSet {
   /**
    * This is a helper method for `filter` that propagates the accumulated tweets.
    */
-  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet
+    def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet
 
   /**
    * Returns a new `TweetSet` that is the union of `TweetSet`s `this` and `that`.
@@ -65,8 +65,8 @@ abstract class TweetSet {
    * Question: Should we implement this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-    def mostRetweeted: Tweet = ???
-  
+    def mostRetweeted: Tweet
+
   /**
    * Returns a list containing all tweets of this set, sorted by retweet count
    * in descending order. In other words, the head of the resulting list should
@@ -76,8 +76,8 @@ abstract class TweetSet {
    * Question: Should we implement this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-    def descendingByRetweet: TweetList = ???
-  
+    def descendingByRetweet: TweetList
+
   /**
    * The following methods are already implemented
    */
@@ -122,15 +122,31 @@ class Empty extends TweetSet {
   def foreach(f: Tweet => Unit): Unit = ()
 
   def union(that: TweetSet): TweetSet = that
+
+  def mostRetweeted: Tweet = new Tweet("", "", -1)
+
+  def descendingByRetweet: TweetList = Nil
 }
 
 class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
 
-    def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet =
-      if (p(elem)) left.filterAcc(p, acc.incl(elem))
-      else left.filterAcc(p, right.filterAcc(p, acc))
+  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet =
+    if (p(elem)) left.filterAcc(p, acc.incl(elem))
+    else left.filterAcc(p, right.filterAcc(p, acc))
 
   def union(that: TweetSet): TweetSet = ((left union right) union that) incl elem
+
+  def mostRetweeted: Tweet = {
+    def mostRetweets(tweet1: Tweet, tweet2: Tweet): Tweet =
+      if (tweet1.retweets >= tweet2.retweets) tweet1 else tweet2
+
+    mostRetweets(mostRetweets(left.mostRetweeted, right.mostRetweeted), elem)
+  }
+
+  def descendingByRetweet: TweetList = {
+    val tweet = mostRetweeted
+    new Cons(tweet, remove(tweet).descendingByRetweet)
+  }
 
   /**
    * The following methods are already implemented
